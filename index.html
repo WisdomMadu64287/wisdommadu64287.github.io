@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MRSOLRUGGER WALLET SYNC</title>
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --card:#1a1a1a;
+      --accent:#ff7300;
+      --muted:#ffb366;
+      --glass:rgba(255,115,0,0.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial}
+    body{background:#0b0b0b;color:#ffb366;display:flex;align-items:center;justify-content:center;padding:32px;background:radial-gradient(circle at center, #1a1a1a 0%, #0b0b0b 100%)}
+    .card{width:100%;max-width:720px;background:linear-gradient(180deg,rgba(255,115,0,0.05),rgba(255,115,0,0.02));border-radius:12px;padding:28px;border:1px solid rgba(255,115,0,0.15);box-shadow:0 8px 30px rgba(255,115,0,0.2)}
+    h1{margin:0 0 8px;font-size:26px;letter-spacing:0.6px;color:#ff7300;text-shadow:0 0 12px rgba(255,115,0,0.8)}
+    p.lead{margin:0 0 18px;color:var(--muted)}
+    .connect-row{display:flex;align-items:center;gap:14px}
+    .connect-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:linear-gradient(90deg,#ff7300,#cc5c00);border:none;color:white;font-weight:600;cursor:pointer;box-shadow:0 0 12px rgba(255,115,0,0.6)}
+    .connect-btn:disabled{opacity:0.6;cursor:not-allowed}
+    .logo{width:36px;height:36px;border-radius:8px;background:var(--glass);display:flex;align-items:center;justify-content:center}
+    .logo svg{width:22px;height:22px;stroke:#ffb366;fill:none}
+    .status{margin-left:12px;color:var(--muted);font-size:14px}
+    .info{margin-top:18px;padding:12px;border-radius:8px;background:rgba(255,115,0,0.04);color:var(--muted);font-size:14px}
+
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;padding:20px}
+    .modal{background:#1a1a1a;padding:20px;border-radius:12px;width:100%;max-width:420px;border:1px solid rgba(255,115,0,0.15);box-shadow:0 8px 20px rgba(255,115,0,0.2)}
+    .modal h3{margin:0 0 8px;color:#ff7300}
+    .modal p{margin:0 0 16px;color:var(--muted)}
+    .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+    .btn{padding:10px 14px;border-radius:8px;border:none;cursor:pointer}
+    .btn.secondary{background:transparent;color:var(--muted);border:1px solid rgba(255,115,0,0.15)}
+    .btn.primary{background:linear-gradient(90deg,#ff7300,#cc5c00);color:white}
+
+    footer{margin-top:18px;font-size:13px;color:var(--muted)}
+
+    @media (max-width:520px){.card{padding:20px}}
+  </style>
+</head>
+<body>
+  <main class="card" role="main">
+    <h1>MRSOLRUGGER WALLET SYNC</h1>
+    <p class="lead">Sync your wallet to continue. Click the button below to connect your Phantom wallet. A wallet popup will appear asking you to confirm access.</p>
+
+    <div class="connect-row">
+      <button id="connectBtn" class="connect-btn" aria-live="polite">
+        <span>Connect Phantom Wallet</span>
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="1.2" />
+            <circle cx="17" cy="12" r="1.6" fill="#ffb366" />
+          </svg>
+        </span>
+      </button>
+
+      <div class="status" id="status">Not connected</div>
+    </div>
+
+    <div class="info" id="infoBox">If you have the Phantom browser extension installed it will open a popup asking to connect. If you don't have Phantom installed, a mock confirmation will appear for demo purposes.</div>
+
+    <footer>Tip: Use the Phantom extension on Chrome/Brave/Edge, or the Phantom mobile app's deep link for mobile dapps.</footer>
+  </main>
+
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document">
+      <h3>Phantom — Request to connect</h3>
+      <p><strong>MRSOLRUGGER</strong> is requesting permission to view your wallet address and request transactions. This is a demo modal shown because no Phantom wallet was detected in your browser.</p>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:44px;height:44px;border-radius:8px;background:rgba(255,115,0,0.05);display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="16" rx="2" stroke="#ffb366" stroke-width="1.2"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-weight:600;color:#ff7300">MRSOLRUGGER</div>
+          <div style="color:var(--muted);font-size:13px">wants to connect to your Phantom wallet</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary" id="cancelMock">Cancel</button>
+        <button class="btn primary" id="approveMock">Approve</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const connectBtn = document.getElementById('connectBtn');
+    const status = document.getElementById('status');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const approveMock = document.getElementById('approveMock');
+    const cancelMock = document.getElementById('cancelMock');
+    const infoBox = document.getElementById('infoBox');
+
+    function setStatus(text){status.textContent = text}
+
+    function getPhantomProvider(){
+      if(window.solana && window.solana.isPhantom) return window.solana;
+      return null;
+    }
+
+    async function connectPhantom(){
+      const provider = getPhantomProvider();
+      if(!provider){
+        modalBackdrop.style.display = 'flex';
+        modalBackdrop.setAttribute('aria-hidden','false');
+        return;
+      }
+
+      try{
+        setStatus('Connecting...');
+        const resp = await provider.connect();
+        const pk = resp.publicKey.toString();
+        setStatus('Connected: ' + pk.slice(0,6) + '...' + pk.slice(-4));
+        infoBox.textContent = 'Connected to Phantom — public key: ' + pk;
+        connectBtn.disabled = true;
+      }catch(err){
+        console.error('Connection error', err);
+        setStatus('Connection rejected or failed');
+      }
+    }
+
+    approveMock.addEventListener('click', ()=>{
+      modalBackdrop.style.display = 'none';
+      modalBackdrop.setAttribute('aria-hidden','true');
+      const fakePk = 'DemoPublicKey12345ABCDE';
+      setStatus('Connected: ' + fakePk.slice(0,6) + '...' + fakePk.slice(-4));
+      infoBox.textContent = 'Demo connection approved. (This was a simulated popup because Phantom is not installed.)';
+      connectBtn.disabled = true;
+    });
+    cancelMock.addEventListener('click', ()=>{
+      modalBackdrop.style.display = 'none';
+      modalBackdrop.setAttribute('aria-hidden','true');
+      setStatus('Not connected');
+    });
+
+    connectBtn.addEventListener('click', connectPhantom);
+
+    window.addEventListener('load', ()=>{
+      const provider = getPhantomProvider();
+      if(provider && provider.isConnected){
+        const pk = provider.publicKey ? provider.publicKey.toString() : 'connected';
+        setStatus('Connected: ' + (pk.length>10 ? pk.slice(0,6) + '...' + pk.slice(-4) : pk));
+        connectBtn.disabled = true;
+        infoBox.textContent = 'Already connected to Phantom.';
+      }
+    });
+  </script>
+</body>
+</html>
